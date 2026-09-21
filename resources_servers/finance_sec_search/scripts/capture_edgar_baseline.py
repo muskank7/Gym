@@ -51,7 +51,7 @@ from resources_servers.finance_sec_search.app import (  # noqa: E402
     FinanceAgentResourcesServer,
     FinanceAgentResourcesServerConfig,
 )
-from resources_servers.finance_sec_search.local_edgar_search import (  # noqa: E402
+from resources_servers.sec_local_index.local_edgar_search import (  # noqa: E402
     MAX_END_DATE,
     fingerprint_source_index,
 )
