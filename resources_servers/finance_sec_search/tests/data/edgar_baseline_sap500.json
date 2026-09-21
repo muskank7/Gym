@@ -1,0 +1,428 @@
+{
+  "edgar_search": [
+    {
+      "arguments": {
+        "search_query": "revenue"
+      },
+      "results_sha256": "4d9ecb8ce2e4963d9b2418d21e4130a0230bef03e93940d8cc869a025a1d8e9a"
+    },
+    {
+      "arguments": {
+        "search_query": "artificial intelligence"
+      },
+      "results_sha256": "b2afa2529b1c4631712ff8d206bba27f947beb744b951175edd1d224a3310a9e"
+    },
+    {
+      "arguments": {
+        "search_query": "\"artificial intelligence\""
+      },
+      "results_sha256": "b9d12f56d3c1c8957485153ca4dc62c26c2b076031870630e7744bbfd589105a"
+    },
+    {
+      "arguments": {
+        "search_query": "revenue OR earnings"
+      },
+      "results_sha256": "ad4206f7d1898d1d73caac852545446c1e5603a9108965902461f13cf490637d"
+    },
+    {
+      "arguments": {
+        "search_query": "revenue NOT guidance"
+      },
+      "results_sha256": "9c0d1f634345beb5b58513ae3b78ae8f55a80d983197472f23fa308b0eb96d20"
+    },
+    {
+      "arguments": {
+        "search_query": "revenue -guidance"
+      },
+      "results_sha256": "9c0d1f634345beb5b58513ae3b78ae8f55a80d983197472f23fa308b0eb96d20"
+    },
+    {
+      "arguments": {
+        "search_query": "cybersec*"
+      },
+      "results_sha256": "ff430e3ac37da85b32e4346e59cda61bd986ee871694422d0ce08114c6a32ce0"
+    },
+    {
+      "arguments": {
+        "search_query": "*"
+      },
+      "results_sha256": "72be34bdd8e33e7f2a3b93edf3e8167eec160c45634b02a301e1b54de239dcf7"
+    },
+    {
+      "arguments": {
+        "form_types": [
+          "10-K"
+        ],
+        "search_query": "revenue"
+      },
+      "results_sha256": "56b6176293a55a2be51761a8730068ec06dd7542a3ab8103f81f378d43ff8567"
+    },
+    {
+      "arguments": {
+        "form_types": [
+          "10-K",
+          "10-Q"
+        ],
+        "search_query": "revenue"
+      },
+      "results_sha256": "139a481ff1ff16ce2f448d67e7f567202c07e56f9328b49e3792fb01c0cd5d57"
+    },
+    {
+      "arguments": {
+        "ciks": [
+          "320193"
+        ],
+        "search_query": "revenue"
+      },
+      "results_sha256": "90bfa8aaaa1bbaf7d5d36a4469fdfab9d853f36a5b7042e33d9565bc2b322b20"
+    },
+    {
+      "arguments": {
+        "ciks": [
+          "0000320193"
+        ],
+        "search_query": "revenue"
+      },
+      "results_sha256": "90bfa8aaaa1bbaf7d5d36a4469fdfab9d853f36a5b7042e33d9565bc2b322b20"
+    },
+    {
+      "arguments": {
+        "ciks": [
+          "320193",
+          "789019"
+        ],
+        "search_query": "revenue"
+      },
+      "results_sha256": "200b89f9be95acb4e543123f5bcc54d9dbb0031ceb3911b5d42286587a2824b5"
+    },
+    {
+      "arguments": {
+        "ciks": [
+          "320193"
+        ],
+        "form_types": [
+          "10-K"
+        ],
+        "search_query": "revenue"
+      },
+      "results_sha256": "85ef041aca0fe7f5142d0f9413185985d90365088337ce08aa08fff4d96fedd5"
+    },
+    {
+      "arguments": {
+        "end_date": "2021-12-31",
+        "search_query": "revenue",
+        "start_date": "2020-01-01"
+      },
+      "results_sha256": "f3f1838f37ee0d855568a60dc54ec0c39bf1b4e83d0be1feb5a9664497ac7736"
+    },
+    {
+      "arguments": {
+        "end_date": "2030-01-01",
+        "search_query": "revenue"
+      },
+      "results_sha256": "4d9ecb8ce2e4963d9b2418d21e4130a0230bef03e93940d8cc869a025a1d8e9a"
+    },
+    {
+      "arguments": {
+        "search_query": "revenue",
+        "start_date": "2030-01-01"
+      },
+      "results_sha256": "56ae99396b13a6113c610afae1e9001edd238b4fa715755c3ac31f557ba13115"
+    },
+    {
+      "arguments": {
+        "page": 2,
+        "search_query": "revenue"
+      },
+      "results_sha256": "ee2064a62dc1f2b333115a1322b9663f7255f2bb0e093da9b3a93914ea1e713c"
+    },
+    {
+      "arguments": {
+        "page": 3,
+        "search_query": "revenue"
+      },
+      "results_sha256": "def93e344ddcfe050101e4338e00f5397024f2e64014fa963353c9ec9851958b"
+    },
+    {
+      "arguments": {
+        "search_query": "revenue",
+        "top_n_results": 1
+      },
+      "results_sha256": "7e9724d4214d0098d2d53ab37495aaadbf6790d97fdfd6ec0dc77b555733f10c"
+    },
+    {
+      "arguments": {
+        "search_query": "revenue",
+        "top_n_results": 100
+      },
+      "results_sha256": "4d9ecb8ce2e4963d9b2418d21e4130a0230bef03e93940d8cc869a025a1d8e9a"
+    },
+    {
+      "arguments": {
+        "ciks": [
+          "320193"
+        ],
+        "search_query": "quantum pineapple"
+      },
+      "results_sha256": "6bcf2bad591927d78ecc1b0a688b746f29c843af5bf7f001ae44095b882e2585"
+    },
+    {
+      "arguments": {
+        "form_types": "[\"10-K\"]",
+        "search_query": "revenue"
+      },
+      "results_sha256": "56b6176293a55a2be51761a8730068ec06dd7542a3ab8103f81f378d43ff8567"
+    },
+    {
+      "arguments": {
+        "form_types": "['10-K']",
+        "search_query": "revenue"
+      },
+      "results_sha256": "56b6176293a55a2be51761a8730068ec06dd7542a3ab8103f81f378d43ff8567"
+    },
+    {
+      "arguments": {
+        "ciks": "[\"320193\"]",
+        "search_query": "revenue"
+      },
+      "results_sha256": "90bfa8aaaa1bbaf7d5d36a4469fdfab9d853f36a5b7042e33d9565bc2b322b20"
+    },
+    {
+      "arguments": {
+        "search_query": ""
+      },
+      "results_sha256": "08e0af3fd3921a69659dfb59af12006b761431070c34eb67ca44616987cec347"
+    },
+    {
+      "arguments": {
+        "search_query": "   "
+      },
+      "results_sha256": "08e0af3fd3921a69659dfb59af12006b761431070c34eb67ca44616987cec347"
+    },
+    {
+      "arguments": {
+        "search_query": "revenue",
+        "start_date": "not-a-date"
+      },
+      "results_sha256": "158c2d57135962be614f637fcb606c3a4e7ecdb1e9b1cc3438942ba2aa6bcd9e"
+    },
+    {
+      "arguments": {
+        "end_date": "2021-01-01",
+        "search_query": "revenue",
+        "start_date": "2022-01-01"
+      },
+      "results_sha256": "7acd749c8d6c6535f4bfe5152e4fa8557b6e7d9c7c931ef3d29d6a06419b5857"
+    },
+    {
+      "arguments": {
+        "ciks": [
+          "APPLE"
+        ],
+        "search_query": "revenue"
+      },
+      "results_sha256": "c99eee5b8e0f280344f27219f3f276d25f03dfaa6cf9d816a79b8fc3c4631a2b"
+    },
+    {
+      "arguments": {
+        "search_query": "(revenue)"
+      },
+      "results_sha256": "c2c9ae14d709f68a116bc1d241de9b0624ca63b38aa0ea59e4002af55e710ffa"
+    },
+    {
+      "arguments": {
+        "search_query": "\"unterminated"
+      },
+      "results_sha256": "b3850a259128afdd112b02a857d238e5d4baf9c001f103dc9e3950b995dbc153"
+    },
+    {
+      "arguments": {
+        "search_query": "revenue AND earnings"
+      },
+      "results_sha256": "100e8dd6abb7e5bd535939c05e6e37784e963a7625eb787d868ab42e783c5509"
+    },
+    {
+      "arguments": {
+        "search_query": "revenue OR"
+      },
+      "results_sha256": "e85419d96e103ea571085e7d4632554b7b4a1a3f1053620b1f9c84379a9f9050"
+    },
+    {
+      "arguments": {
+        "search_query": "NOT"
+      },
+      "results_sha256": "ef11989860dcde3d77dab03518b941a4c423543b6eda2f0b7bfac0baa0d4b871"
+    },
+    {
+      "arguments": {
+        "search_query": "rev*enue"
+      },
+      "results_sha256": "cb56e6a74bafd75169cf353eb9cb452c44973bb084cc59f58ae6a07c75f21da3"
+    },
+    {
+      "arguments": {
+        "search_query": "\"phrase\"*"
+      },
+      "results_sha256": "408e815ccbc8618b05a6b9dfc43320a893f61fe90fc45a786fd44c825f9a844f"
+    }
+  ],
+  "filing_text": [
+    {
+      "length": 16969,
+      "sha256": "2cc3a0f66a04bfb80b41c7303add785667460b0ddabd8645949039e9a85def82",
+      "source": "sec-corpus",
+      "url": "https://www.sec.gov/Archives/edgar/data/789019/000119312524204403/d846847dex991.htm"
+    },
+    {
+      "length": 7605,
+      "sha256": "efe22de72766479e2400f234f65092acd83c92c4579cc45751fcffdca45c167b",
+      "source": "sec-corpus",
+      "url": "https://www.sec.gov/Archives/edgar/data/798354/000119312523277510/d416532dex991.htm"
+    },
+    {
+      "length": 18894,
+      "sha256": "d8c762b6f3b2b62c8c16e4f0ed3b215c213db119c4b30f904741e5ad8ccb1e17",
+      "source": "sec-corpus",
+      "url": "https://www.sec.gov/Archives/edgar/data/798354/000119312524077703/d817941dex991.htm"
+    },
+    {
+      "length": 40540,
+      "sha256": "e675d0f78d42fa6960fe3eb3e59905616c95a97f53af7d13c3ba1bc146089947",
+      "source": "sec-corpus",
+      "url": "https://www.sec.gov/Archives/edgar/data/857005/000165495419008466/ptc_remarks.htm"
+    },
+    {
+      "length": 43623,
+      "sha256": "907e2df7800b4bd389a649755074b82a86ff2d53254dde0b5b866b1baf6a76bf",
+      "source": "sec-corpus",
+      "url": "https://www.sec.gov/Archives/edgar/data/857005/000165495419004732/preparedremarks.htm"
+    },
+    {
+      "length": 40571,
+      "sha256": "20244c5679ffb7087a5df7fea8f539ee53326e2673b2342241127ac2ffaf9918",
+      "source": "sec-corpus",
+      "url": "https://www.sec.gov/Archives/edgar/data/857005/000165495419008466/ptc_pressrelease.htm"
+    },
+    {
+      "length": 39905,
+      "sha256": "43a60b64041c5da65bfb78abc18a4ee3b9df30dee90419262d84b654db7df144",
+      "source": "sec-corpus",
+      "url": "https://www.sec.gov/Archives/edgar/data/857005/000165495419004732/q219pressrelease.htm"
+    },
+    {
+      "length": 32825,
+      "sha256": "3703908bef7ed22074992c54d264796b1750820cadd5329657e861e6162e96a0",
+      "source": "sec-corpus",
+      "url": "https://www.sec.gov/Archives/edgar/data/779152/000077915225000007/jkhy-20241231xex99pressrel.htm"
+    },
+    {
+      "length": 19178,
+      "sha256": "6e147e71a0da4eb8da5f2d832f32182f4dd462eabb8e230fc47c29f935bbe856",
+      "source": "sec-corpus",
+      "url": "https://www.sec.gov/Archives/edgar/data/798354/000079835420000009/exhibit991.htm"
+    },
+    {
+      "length": 35616,
+      "sha256": "20c878df96f7718548f574dda33be98a268bc067d68d0fac977bcddaf76416eb",
+      "source": "sec-corpus",
+      "url": "https://www.sec.gov/Archives/edgar/data/779152/000077915224000076/jkhy-20240630xex99pressrel.htm"
+    },
+    {
+      "length": 44872,
+      "sha256": "f9727abbe6a0209701ac0422406a75fe18d8bbff5bef48f41dd1aba224288c3d",
+      "source": "sec-corpus",
+      "url": "https://www.sec.gov/Archives/edgar/data/857005/000085700519000003/q119preparedremarks.htm"
+    },
+    {
+      "length": 33850,
+      "sha256": "fc8d67e3b6ae21cfde316af6b41f5aa8eecc3d9a56a59f8158123bb63fdf73f3",
+      "source": "sec-corpus",
+      "url": "https://www.sec.gov/Archives/edgar/data/857005/000085700519000003/q119pressrelease.htm"
+    },
+    {
+      "length": 32856,
+      "sha256": "371534cf5aaa3b5cce08305ef6c4178a18499576d23f36650656a3010b82841a",
+      "source": "sec-corpus",
+      "url": "https://www.sec.gov/Archives/edgar/data/779152/000077915224000030/jkhy-20240331xex99pressrel.htm"
+    },
+    {
+      "length": 29196,
+      "sha256": "b39adf9b9e0525e5c113d505f2595097dede3ebe97040b3876ababa876a781a1",
+      "source": "sec-corpus",
+      "url": "https://www.sec.gov/Archives/edgar/data/779152/000077915223000057/jkhy-20230630xex99pressrel.htm"
+    },
+    {
+      "length": 7935,
+      "sha256": "446567c5491c564343d952652e6f78f906b9786086f38f52041e956ca14930ab",
+      "source": "sec-corpus",
+      "url": "https://www.sec.gov/Archives/edgar/data/315293/000119312521273948/d222913dex991.htm"
+    },
+    {
+      "length": 28942,
+      "sha256": "355ed4af03eadd8bbdec6bc3cd35ce6c710f134bb5fa4015b5155d149638899a",
+      "source": "sec-corpus",
+      "url": "https://www.sec.gov/Archives/edgar/data/779152/000077915223000022/jkhy-20230331xex99pressrel.htm"
+    },
+    {
+      "length": 31287,
+      "sha256": "84929728e5aa400c83fac9ecd4c64794b34282ae467fadf8d77366b88911aa81",
+      "source": "sec-corpus",
+      "url": "https://www.sec.gov/Archives/edgar/data/857005/000085700519000020/q4fy19preparedremarks.htm"
+    },
+    {
+      "length": 24616,
+      "sha256": "99cff0e153d988a3483d2c1a376caf19a51a45e00d22efd0e151eae84c299615",
+      "source": "sec-corpus",
+      "url": "https://www.sec.gov/Archives/edgar/data/779152/000077915220000008/jkhy-20191231xexhibit9.htm"
+    },
+    {
+      "length": 7878,
+      "sha256": "aa71c23777a2c77ca69fdc80b180347ca46bb1a4727b5832ed865bbdd1788ebc",
+      "source": "sec-corpus",
+      "url": "https://www.sec.gov/Archives/edgar/data/51143/000155837020004097/ibm-20200420xex99d3.htm"
+    },
+    {
+      "length": 27293,
+      "sha256": "0b5e82d9e305f15eb4e3c978223b377801a901afd103a544691346b42021413c",
+      "source": "sec-corpus",
+      "url": "https://www.sec.gov/Archives/edgar/data/1390777/000139077721000110/ex991_revisedfinancialsupp.htm"
+    },
+    {
+      "length": 24666,
+      "sha256": "c45c3fd590718e993aa550e931b0d409a290593143450358f62734a891f62cc5",
+      "source": "sec-corpus",
+      "url": "https://www.sec.gov/Archives/edgar/data/779152/000077915219000025/jkhy-20190331xexhibit99pre.htm"
+    },
+    {
+      "length": 32183,
+      "sha256": "58cc0079c40739d964293f2b71b35a467987cc64a44a0fb12b2309d2ab7ebff7",
+      "source": "sec-corpus",
+      "url": "https://www.sec.gov/Archives/edgar/data/779152/000077915224000016/jkhy-20231231xex99pressrel.htm"
+    },
+    {
+      "length": 39558,
+      "sha256": "cba03a2e96ec2e90727c5ec1f3b10510cef1b4107143eb6c8144fb389b2f1614",
+      "source": "sec-corpus",
+      "url": "https://www.sec.gov/Archives/edgar/data/1390777/000139077722000002/ex991_earningsreleasex4q21.htm"
+    },
+    {
+      "length": 24014,
+      "sha256": "2f19e7fd40a8bcdff45bd4efe244e2f7f71f7517e2be3f3bf78f448fa71f77ee",
+      "source": "sec-corpus",
+      "url": "https://www.sec.gov/Archives/edgar/data/779152/000077915219000002/jkhy-20181231xexhibit99pre.htm"
+    },
+    {
+      "length": 32826,
+      "sha256": "0235844330616d59740b37cfce3973a4dbf007b54e5a8f61820e2f0f7797388c",
+      "source": "sec-corpus",
+      "url": "https://www.sec.gov/Archives/edgar/data/1390777/000139077721000045/ex991_earningsreleasex1q21.htm"
+    }
+  ],
+  "index": {
+    "document_count": 579881,
+    "fingerprint": "ccf063c14191dbc730470fb8842f876b85260044ace35dd1f386e15754f34770",
+    "name": "sap-500_sec_fts.sqlite"
+  },
+  "max_end_date": "2025-04-07",
+  "schema_version": 1
+}
