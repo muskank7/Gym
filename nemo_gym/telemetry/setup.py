@@ -136,6 +136,15 @@ def is_telemetry_env_enabled() -> bool:
     return False
 
 
+def is_telemetry_metrics_enabled() -> bool:
+    """Return the effective metrics switch after Gym/Lens env precedence."""
+    for prefix in (_OTEL_PREFIX, _OTEL_FALLBACK_PREFIX):
+        raw = os.environ.get(f"{prefix}_METRICS_ENABLED", "").strip().lower()
+        if raw:
+            return raw in _TRUTHY
+    return True
+
+
 def telemetry_config_from_global_config(global_config_dict: Any) -> TelemetryConfig:
     """Build a :class:`TelemetryConfig` from Gym's merged global config dict.
 

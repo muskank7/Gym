@@ -36,10 +36,26 @@ telemetry:
 | `exporter` | `otlp` | `otlp` or `console`. |
 | `traces_enabled` | `true` | Emit spans. |
 | `metrics_enabled` | `true` | Emit metrics. |
+| `memory_profiling` | disabled | Sample each managed server process tree. See below. |
 | `logs_enabled` | `false` | Bridge Python logging to OpenTelemetry logs. |
 | `export_strategy` | `all_ranks` | Which processes export. See below. |
 | `export_rank` | `-1` | For `single_rank`: which rank exports. `-1` means the last rank. |
 | `run_id` | generated | Correlates every process of one run. |
+
+### Process-Tree Memory Profiling
+
+Enable memory profiling inside the telemetry block:
+
+```yaml
+telemetry:
+  enabled: true
+  metrics_enabled: true
+  memory_profiling:
+    enabled: true
+    interval_seconds: 1
+```
+
+The orchestrator samples every server process and its descendants, including Uvicorn workers and ordinary subprocesses. Collection starts after the servers become ready and stops before they are terminated. This feature reads Linux `/proc`; PSS is omitted when `smaps_rollup` is unavailable, while RSS falls back to `statm`.
 
 ### Why `service_name_per_server` Defaults to True
 

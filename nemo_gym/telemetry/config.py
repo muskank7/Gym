@@ -26,7 +26,17 @@ unconditionally from Gym's config machinery.
 
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+
+class MemoryProfilingConfig(BaseModel):
+    """Process-tree memory sampling for Gym-managed servers."""
+
+    enabled: bool = False
+    """Collect memory for every server process tree."""
+
+    interval_seconds: float = Field(default=1.0, gt=0)
+    """Seconds between samples."""
 
 
 class TelemetryConfig(BaseModel, extra="allow"):
@@ -84,6 +94,9 @@ class TelemetryConfig(BaseModel, extra="allow"):
     metrics_enabled: bool = True
     """Emit metric instruments (the ``gym.*`` histograms/gauges plus the FastAPI
     instrumentor's ``http.server.*``)."""
+
+    memory_profiling: MemoryProfilingConfig = Field(default_factory=MemoryProfilingConfig)
+    """Sample each Gym-managed server process tree and emit memory metrics."""
 
     logs_enabled: bool = False
     """Bridge Python logging to OTel logs, exported with trace correlation."""

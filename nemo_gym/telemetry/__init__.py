@@ -45,13 +45,14 @@ from nemo_gym.telemetry._fallbacks import (
     span_cm,
     trace_fn,
 )
-from nemo_gym.telemetry.config import TelemetryConfig
+from nemo_gym.telemetry.config import MemoryProfilingConfig, TelemetryConfig
 from nemo_gym.telemetry.setup import (
     TELEMETRY_KEY_NAME,
     configure_telemetry_env,
     get_telemetry,
     init_telemetry,
     is_telemetry_env_enabled,
+    is_telemetry_metrics_enabled,
     shutdown_telemetry,
     telemetry_config_from_global_config,
 )
@@ -61,12 +62,14 @@ from nemo_gym.telemetry.span_groups import GymSpanGroup
 __all__ = [
     "TELEMETRY_KEY_NAME",
     "GymSpanGroup",
+    "MemoryProfilingConfig",
     "TelemetryConfig",
     "configure_telemetry_env",
     "get_telemetry",
     "init_telemetry",
     "is_span_group_enabled",
     "is_telemetry_env_enabled",
+    "is_telemetry_metrics_enabled",
     "managed_span",
     "safe_set_span_attributes",
     "shutdown_telemetry",

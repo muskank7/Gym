@@ -28,9 +28,22 @@ would disagree the first time one dropped a sample.
 | `gym.verify.duration_ms` | Histogram | ms | Wall-clock duration of one verification. |
 | `gym.verify.success_rate` | Gauge | fraction | Cumulative fraction of verifications that completed. See below. |
 | `gym.servers.active` | Gauge | count | Number of servers the orchestrator started. |
+| `gym.server.memory.usage` | Gauge | bytes | Current RSS or PSS for one managed server and its descendants. |
+| `gym.server.memory.sampled_peak` | Gauge | bytes | Largest value observed by the sampler for one managed server and its descendants. |
+| `gym.server.processes` | Gauge | count | Processes currently attributed to one managed server. |
 
 Rollout duration is recorded even when a rollout fails. A crashed rollout still consumed
 wall-clock time, and dropping those samples would bias the histogram toward the fast path.
+
+### Process-Tree Memory Metrics
+
+Memory metrics are emitted only when `telemetry.memory_profiling.enabled` is true. Every point carries `nemo.gym.server.name`, `nemo.gym.server.type`, and the root `process.pid`; memory gauges also carry `memory.type`, which is `rss` or `pss`.
+
+RSS counts every resident page mapped by every process and can double-count pages shared by Uvicorn workers. PSS divides shared pages among the processes mapping them, so summing PSS across server trees is the better estimate of their combined host footprint. The sampled peak is not the kernel's exact lifetime peak: an allocation that begins and ends between samples can be missed.
+
+Descendants remain attributed while they stay in the server's Linux process tree. Detached or reparented processes and remote Ray actors are not included.
+
+Compare these series with `http.server.active_requests` while increasing workload concurrency. Separate server processes export their HTTP metrics independently, so sum active requests by Gym server name when a server uses several Uvicorn workers.
 
 ### What `gym.verify.success_rate` Measures
 
@@ -59,6 +72,7 @@ server:
 
 | Metric | Dimensions |
 | --- | --- |
+| `http.server.active_requests` | `http.server_name`, `http.method` |
 | `http.server.request.duration` | `http.route`, `http.request.method`, `http.response.status_code` |
 
 Use these for request latency. They are dimensioned, so you can compare `/verify` against
