@@ -294,6 +294,61 @@ def test_live_mode_wins_over_a_configured_index(tmp_path: Path) -> None:
     assert isinstance(server._edgar_search_service._backend, LiveEdgarSearch)
 
 
+def test_a_v1_sidecar_is_still_accepted(tmp_path: Path) -> None:
+    """Bumping the builder may not strand sidecars already built beside indexes
+    too large to rebuild casually."""
+    index = _varied_index(tmp_path / "index.sqlite")
+    sidecar = default_sidecar_path(index)
+    build(index, sidecar)
+    connection = sqlite3.connect(sidecar)
+    connection.execute("UPDATE sidecar_metadata SET value = '1' WHERE key = 'schema_version'")
+    connection.commit()
+    connection.close()
+
+    search = LocalEdgarSearch(index, max_end_date="2030-01-01")
+
+    assert search.sidecar_schema_version == 1
+    assert search.search("*")
+
+
+def test_an_unknown_sidecar_version_is_refused(tmp_path: Path) -> None:
+    index = _varied_index(tmp_path / "index.sqlite")
+    sidecar = default_sidecar_path(index)
+    build(index, sidecar)
+    connection = sqlite3.connect(sidecar)
+    connection.execute("UPDATE sidecar_metadata SET value = '99' WHERE key = 'schema_version'")
+    connection.commit()
+    connection.close()
+
+    with pytest.raises(ValueError, match="expected one of 1, 2"):
+        LocalEdgarSearch(index, max_end_date="2030-01-01")
+
+
+def test_report_date_is_mirrored_when_the_index_has_it(tmp_path: Path) -> None:
+    index = _varied_index(tmp_path / "index.sqlite")
+    connection = sqlite3.connect(index)
+    connection.execute("ALTER TABLE documents ADD COLUMN report_date TEXT")
+    connection.execute("UPDATE documents SET report_date = '2024-09-28'")
+    connection.commit()
+    connection.close()
+    build(index, default_sidecar_path(index))
+
+    search = LocalEdgarSearch(index, max_end_date="2030-01-01")
+
+    assert search.sidecar_schema_version == 2
+    assert "report_date" in search.metadata_columns
+
+
+def test_an_index_without_report_date_still_builds(tmp_path: Path) -> None:
+    index = _varied_index(tmp_path / "index.sqlite")
+    build(index, default_sidecar_path(index))
+
+    search = LocalEdgarSearch(index, max_end_date="2030-01-01")
+
+    assert "report_date" not in search.metadata_columns
+    assert search.search("*")
+
+
 def test_coverage_reports_the_indexed_span(tmp_path: Path) -> None:
     search = LocalEdgarSearch(_index(tmp_path / "index.sqlite"), max_end_date=UPSTREAM_MAX_END_DATE)
 

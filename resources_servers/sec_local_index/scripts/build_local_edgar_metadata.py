@@ -45,6 +45,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
 from resources_servers.sec_local_index.local_edgar_search import (  # noqa: E402
     METADATA_COLUMNS,
+    OPTIONAL_METADATA_COLUMNS,
     SIDECAR_SCHEMA_VERSION,
     default_sidecar_path,
     fingerprint_source_index,
@@ -68,6 +69,13 @@ def build(index_path: Path, output_path: Path, *, batch_size: int = BATCH_SIZE) 
         total = source.execute("SELECT COUNT(*) FROM documents").fetchone()[0]
         print(f"source documents: {total}", flush=True)
 
+        available = {str(row[1]) for row in source.execute("PRAGMA table_info(documents)")}
+        optional = tuple(column for column in OPTIONAL_METADATA_COLUMNS if column in available)
+        columns = METADATA_COLUMNS + optional
+        skipped = [column for column in OPTIONAL_METADATA_COLUMNS if column not in available]
+        if skipped:
+            print(f"index has no {', '.join(skipped)} — not mirrored", flush=True)
+
         destination = sqlite3.connect(str(temporary_path))
         try:
             # A larger page size cuts the number of reads needed to warm the
@@ -75,11 +83,11 @@ def build(index_path: Path, output_path: Path, *, batch_size: int = BATCH_SIZE) 
             destination.execute("PRAGMA page_size = 8192")
             destination.execute("PRAGMA journal_mode = OFF")
             destination.execute("PRAGMA synchronous = OFF")
-            _create_schema(destination)
+            _create_schema(destination, optional)
 
-            projection = ", ".join(METADATA_COLUMNS)
+            projection = ", ".join(columns)
             cursor = source.execute(f"SELECT {projection} FROM documents ORDER BY id")
-            placeholders = ", ".join("?" for _ in METADATA_COLUMNS)
+            placeholders = ", ".join("?" for _ in columns)
             insert = f"INSERT INTO documents_meta ({projection}) VALUES ({placeholders})"
 
             copied = 0
@@ -117,9 +125,10 @@ def build(index_path: Path, output_path: Path, *, batch_size: int = BATCH_SIZE) 
     print(f"wrote {output_path} ({size_mb:.0f} MB)", flush=True)
 
 
-def _create_schema(destination: sqlite3.Connection) -> None:
+def _create_schema(destination: sqlite3.Connection, optional_columns: tuple[str, ...] = ()) -> None:
+    extra = "".join(f",\n            {column} TEXT" for column in optional_columns)
     destination.execute(
-        """
+        f"""
         CREATE TABLE documents_meta (
             id INTEGER PRIMARY KEY,
             accession_number TEXT NOT NULL,
@@ -130,7 +139,7 @@ def _create_schema(destination: sqlite3.Connection) -> None:
             document_type TEXT NOT NULL,
             description TEXT,
             filing_date TEXT NOT NULL,
-            url TEXT NOT NULL
+            url TEXT NOT NULL{extra}
         )
         """
     )

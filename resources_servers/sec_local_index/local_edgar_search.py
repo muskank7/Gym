@@ -43,7 +43,11 @@ BAREWORD_RE = re.compile(r"^[A-Za-z0-9_]+$")
 
 _COVERAGE_UNSET = object()
 
-SIDECAR_SCHEMA_VERSION = 1
+SIDECAR_SCHEMA_VERSION = 2
+
+# v1 sidecars carry no report_date. They stay readable so that bumping the
+# builder does not strand the sidecars already built beside large indexes.
+SUPPORTED_SIDECAR_SCHEMA_VERSIONS = (1, 2)
 SIDECAR_SUFFIX = ".metadata"
 SIDECAR_ALIAS = "meta"
 SIDECAR_TABLE = f"{SIDECAR_ALIAS}.documents_meta"
@@ -68,6 +72,11 @@ METADATA_COLUMNS = (
     "filing_date",
     "url",
 )
+
+# Mirrored too when the index carries them. Optional because indexes built
+# before these columns existed are still usable; a sidecar simply records
+# whichever were available, and readers check rather than assume.
+OPTIONAL_METADATA_COLUMNS = ("report_date",)
 
 # Not mirrored into the sidecar, so dump path lookups always read documents.
 DUMP_PATH_COLUMNS = ("canonical_url_key", "source_path")
@@ -285,6 +294,7 @@ class LocalEdgarSearch:
         self.index_path = Path(index_path)
         if not self.index_path.is_file():
             raise FileNotFoundError(f"Local EDGAR index not found: {self.index_path}")
+        self.sidecar_schema_version: int | None = None
         self._document_columns = self._validate_index()
         self.metadata_path = self._resolve_metadata_path(metadata_path)
         self._require_usable_metadata_source()
@@ -302,6 +312,20 @@ class LocalEdgarSearch:
     @property
     def uses_metadata_sidecar(self) -> bool:
         return self.metadata_path is not None
+
+    @property
+    def metadata_columns(self) -> frozenset[str]:
+        """Columns the active metadata source can actually return.
+
+        A v1 sidecar has no report_date even when the index behind it does, so
+        callers have to ask rather than read the index schema.
+        """
+        pragma = (
+            f"PRAGMA {SIDECAR_ALIAS}.table_info(documents_meta)"
+            if self.metadata_path is not None
+            else "PRAGMA table_info(documents)"
+        )
+        return frozenset(str(row[1]) for row in self._session().execute(pragma))
 
     @property
     def coverage(self) -> tuple[str, str] | None:
@@ -353,12 +377,14 @@ class LocalEdgarSearch:
             sidecar.close()
 
         version = recorded.get("schema_version")
-        if version != str(SIDECAR_SCHEMA_VERSION):
+        if version not in {str(supported) for supported in SUPPORTED_SIDECAR_SCHEMA_VERSIONS}:
+            supported = ", ".join(str(value) for value in SUPPORTED_SIDECAR_SCHEMA_VERSIONS)
             raise ValueError(
                 f"Metadata sidecar {candidate} has schema version {version!r}, "
-                f"expected {SIDECAR_SCHEMA_VERSION}. Rebuild it with "
+                f"expected one of {supported}. Rebuild it with "
                 f"resources_servers/sec_local_index/scripts/build_local_edgar_metadata.py."
             )
+        self.sidecar_schema_version = int(version)
 
         connection = self._connect()
         try:
