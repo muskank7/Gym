@@ -47,14 +47,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
 from nemo_gym.server_utils import ServerClient  # noqa: E402
 from resources_servers.finance_sec_search.app import (  # noqa: E402
+    DEFAULT_MAX_END_DATE,
     EdgarSearchRequest,
     FinanceAgentResourcesServer,
     FinanceAgentResourcesServerConfig,
 )
-from resources_servers.sec_local_index.local_edgar_search import (  # noqa: E402
-    MAX_END_DATE,
-    fingerprint_source_index,
-)
+from resources_servers.sec_local_index.local_edgar_search import fingerprint_source_index  # noqa: E402
 
 
 FIXTURE_SCHEMA_VERSION = 1
@@ -253,7 +251,7 @@ def main() -> None:
     parser.add_argument("--metadata", default=None, help="Metadata sidecar; defaults to the index plus '.metadata'")
     parser.add_argument("--corpus", default=None, help="Downloaded SEC corpus root, enabling filing-text capture")
     parser.add_argument("--cache-dir", default=None, help="Enables the filing-text cache during capture")
-    parser.add_argument("--max-end-date", default=MAX_END_DATE, help="Cutoff applied to every captured search")
+    parser.add_argument("--max-end-date", default=DEFAULT_MAX_END_DATE, help="Cutoff applied to every captured search")
     parser.add_argument("--filings", type=int, default=25, help="How many filing texts to digest")
     parser.add_argument(
         "--digest-only",
