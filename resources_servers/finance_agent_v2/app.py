@@ -478,7 +478,9 @@ class FinanceAgentV2ResourcesServer(SimpleResourcesServer):
         tools["submit_final_result"] = SubmitFinalResult()
 
         if self._local_edgar is not None and self.config.local_sec_corpus_path:
-            tools["parse_html_page"] = LocalParseHtmlPage(self._local_edgar, self.config.local_sec_corpus_path)
+            tools["parse_html_page"] = LocalParseHtmlPage(
+                self._local_edgar, self.config.local_sec_corpus_path, cache=cache
+            )
         else:
             tools["parse_html_page"] = CachedParseHtmlPage(cache) if cache.enabled else ParseHtmlPage()
 

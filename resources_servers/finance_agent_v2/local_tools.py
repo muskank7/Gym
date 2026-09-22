@@ -26,8 +26,10 @@ import logging
 from pathlib import Path
 from typing import Any, Optional
 
-from finance_agent.tools import MAX_END_DATE, EDGARSearch, ParseHtmlPage
+from finance_agent.tools import MAX_END_DATE, EDGARSearch
 
+from resources_servers.finance_agent_v2.cached_tools import CachedParseHtmlPage
+from resources_servers.sec_local_index.cache import ToolCache
 from resources_servers.sec_local_index.edgar_search_service import EdgarSearchService
 from resources_servers.sec_local_index.html_text import html_to_text
 from resources_servers.sec_local_index.local_edgar_search import LocalEdgarSearch, canonical_url_key
@@ -68,14 +70,19 @@ class LocalEDGARSearch(EDGARSearch):
         return await self._engine.execute_async(request)
 
 
-class LocalParseHtmlPage(ParseHtmlPage):
+class LocalParseHtmlPage(CachedParseHtmlPage):
     """parse_html_page served from the downloaded filing corpus.
 
-    Falls back to upstream's fetch for anything the corpus does not hold, so a
-    non-SEC URL still resolves.
+    Anything the corpus does not hold still resolves, through the same cached
+    fetch live mode uses, so a non-SEC URL costs one network read per run
+    rather than one per rollout.
     """
 
-    def __init__(self, engine: LocalEdgarSearch, corpus_root: str | Path):
+    # Reads are frequent, so the tally is logged periodically rather than per call.
+    LOG_EVERY = 100
+
+    def __init__(self, engine: LocalEdgarSearch, corpus_root: str | Path, cache: Optional[ToolCache] = None):
+        super().__init__(cache if cache is not None else ToolCache(None))
         self._engine = engine
         self._corpus_root = Path(corpus_root)
 
@@ -93,4 +100,15 @@ class LocalParseHtmlPage(ParseHtmlPage):
         path = self.local_path_for(url)
         if path is None:
             return await super()._parse_html_page(url)
+        self._record_read("sec-corpus")
         return html_to_text(path.read_text(encoding="utf-8", errors="replace"))
+
+    def _record_read(self, source: str) -> None:
+        """Surfaces a corpus that is quietly missing most of what is asked for,
+        which otherwise shows up only as a slow run."""
+        super()._record_read(source)
+        if sum(self.read_sources.values()) % self.LOG_EVERY == 0:
+            logger.info(
+                "SEC filing reads by source: %s",
+                " ".join(f"{name}={count}" for name, count in sorted(self.read_sources.items())),
+            )
