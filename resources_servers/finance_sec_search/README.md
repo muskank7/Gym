@@ -137,7 +137,9 @@ With a local corpus or index available, also set `sec_dump_path` and
 | `live` | sec-api.io | SEC submissions API | `sec_api_key` |
 
 Left unset it follows `local_edgar_index_path`: `local` when one is configured,
-`live` otherwise. Asking for `local` without an index fails at startup.
+`live` otherwise. Asking for `local` without an index fails at startup. The
+mode in use, and in local mode the date range the index covers, is logged at
+startup; `NEMO_GYM_LOG_LEVEL=WARNING` silences that.
 
 Local mode makes no network call, which is what training throughput needs: the
 ticker registry is built from the corpus rather than downloaded from SEC.gov,
