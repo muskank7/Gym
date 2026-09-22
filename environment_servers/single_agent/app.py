@@ -38,6 +38,7 @@ from nemo_gym.global_config import (
     TOKEN_ID_CAPTURE_BLOCK,
     get_first_server_config_dict,
 )
+from nemo_gym.openai_utils import NeMoGymEasyInputMessage
 from nemo_gym.server_utils import get_response_json, raise_for_status
 from nemo_gym.single_agent_episode_types import (
     SINGLE_AGENT_TASK_INPUT_CONTRACT,
@@ -170,6 +171,7 @@ class SingleAgentEnvironmentServer(BaseEnvironmentServer[SingleAgentEpisodeReque
                     task_id=request.task.task_id,
                     tool_accesses=tool_accesses,
                     sandbox_access=seed.sandbox_access,
+                    agent_context=seed.agent_context,
                 ),
             )
             await raise_for_status(agent_create_http_response)
@@ -202,11 +204,14 @@ class SingleAgentEnvironmentServer(BaseEnvironmentServer[SingleAgentEpisodeReque
 
         agent_cleanup = cleanup.register_cleanup("agent session", close_agent)
         agent_response = None
+        params = task_input.responses_create_params.model_copy(deep=True)
+        if seed.agent_context is not None and seed.agent_context.instruction is not None:
+            params.input = [NeMoGymEasyInputMessage(role="user", content=seed.agent_context.instruction)]
         try:
             agent_http_response = await self.server_client.post(
                 server_name=self.config.agent_server.name,
                 url_path=self._agent_responses_path(request),
-                json=task_input.responses_create_params,
+                json=params,
                 cookies=agent_cookies,
             )
             await raise_for_status(agent_http_response)
@@ -243,7 +248,7 @@ class SingleAgentEnvironmentServer(BaseEnvironmentServer[SingleAgentEpisodeReque
                     episode_id=request.episode_id,
                     task_id=request.task.task_id,
                     verification_input=ResponsesVerificationInput(
-                        responses_create_params=task_input.responses_create_params,
+                        responses_create_params=params,
                         response=agent_response,
                     ),
                 ),

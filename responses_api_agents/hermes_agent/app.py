@@ -26,10 +26,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from shlex import quote
 from time import time
+from types import SimpleNamespace
 from typing import Any, Callable, Optional
 from uuid import uuid4
 
-import model_tools  # noqa: F401  # fail-fast if hermes-agent isn't installed  # pyright: ignore[reportMissingImports]
 from fastapi import Request
 from pydantic import ConfigDict, Field
 
@@ -158,6 +158,7 @@ class HermesAgentSessionState:
     runner_session: SandboxPtySession | None = None
     runner_exit_task: asyncio.Task[int] | None = None
     observations: AgentObservationBundle | None = None
+    task_instruction: str = ""
 
 
 # if ray close sys.stderr mid-request, write to the original fd
@@ -380,7 +381,7 @@ class HermesAgent(SimpleResponsesAPIAgent):
     ) -> HermesAgentSessionState:
         if body.sandbox_access is None:
             raise ValueError("Hermes requires sandbox_access for an episode session")
-        if self.config.enabled_toolsets != ["terminal"]:
+        if self.config.enabled_toolsets not in (None, ["terminal"]):
             raise ValueError("Hermes sandbox access requires enabled_toolsets: [terminal]")
         connection = body.sandbox_access.connection
         if not isinstance(connection, DirectSandboxConnection):
@@ -398,9 +399,6 @@ class HermesAgent(SimpleResponsesAPIAgent):
 
         session_dir = f"/tmp/nemo-gym-hermes-sessions/{agent_session_id}"
         try:
-            uv_path = shutil.which("uv")
-            if uv_path is None:
-                raise RuntimeError("Hermes agent server requires uv to install the sandbox runtime")
             prepare = await sandbox.exec(
                 f"mkdir -p {quote(_SANDBOX_RUNTIME_DIR)} {quote(session_dir)}",
                 cwd=body.sandbox_access.workdir,
@@ -408,7 +406,23 @@ class HermesAgent(SimpleResponsesAPIAgent):
             )
             if prepare.return_code != 0:
                 raise RuntimeError(prepare.stderr or prepare.stdout or "Failed to prepare Hermes sandbox paths")
-            await sandbox.upload(uv_path, _SANDBOX_UV)
+            # Download for the sandbox architecture; the server may run on macOS
+            # or a different CPU architecture. Task images already provide Python.
+            bootstrap_script = (
+                "import io,pathlib,platform,tarfile,urllib.request; "
+                "arch={'x86_64':'x86_64','aarch64':'aarch64'}[platform.machine()]; "
+                "url=f'https://github.com/astral-sh/uv/releases/download/0.10.12/uv-{arch}-unknown-linux-musl.tar.gz'; "
+                "archive=tarfile.open(fileobj=io.BytesIO(urllib.request.urlopen(url,timeout=120).read()),mode='r:gz'); "
+                "member=next(m for m in archive if m.name.endswith('/uv')); "
+                f"target=pathlib.Path({_SANDBOX_UV!r}); "
+                "target.write_bytes(archive.extractfile(member).read()); target.chmod(0o755)"
+            )
+            bootstrap = await sandbox.exec(
+                f"test -x {quote(_SANDBOX_UV)} || python3 -c {quote(bootstrap_script)}",
+                timeout_s=self.config.sandbox_install_timeout_seconds,
+            )
+            if bootstrap.return_code:
+                raise RuntimeError(f"Hermes uv installation failed: {bootstrap.stdout}\n{bootstrap.stderr}")
             install = await sandbox.exec(
                 (
                     f"chmod 755 {quote(_SANDBOX_UV)}; "
@@ -422,18 +436,53 @@ class HermesAgent(SimpleResponsesAPIAgent):
                 timeout_s=self.config.sandbox_install_timeout_seconds,
             )
             if install.return_code != 0:
-                raise RuntimeError(install.stderr or install.stdout or "Hermes sandbox installation failed")
+                raise RuntimeError(f"Hermes sandbox installation failed: {install.stdout}\n{install.stderr}")
             await sandbox.upload(Path(__file__).with_name("sandbox_runner.py"), _SANDBOX_RUNNER)
             await sandbox.upload(Path(__file__).with_name("sandbox_observer.py"), _SANDBOX_OBSERVER)
         except BaseException:
             await sandbox.disconnect()
             raise
 
+        try:
+            task_instruction = ""
+            context = body.agent_context
+            if context is not None:
+                from nemo_gym.sandbox.task_tools import prepare_task_tools
+
+                with tempfile.TemporaryDirectory(prefix="hermes-task-tools-") as directory:
+                    task_instruction = await prepare_task_tools(
+                        sandbox,
+                        SimpleNamespace(
+                            session_id=agent_session_id,
+                            user=context.user,
+                            workdir=body.sandbox_access.workdir,
+                            setup_timeout_sec=self.config.sandbox_install_timeout_seconds,
+                            mcp_servers=[server.model_dump() for server in context.mcp_servers],
+                            skills_dir=context.skills_dir,
+                        ),
+                        Path(directory),
+                    )
+            if context is not None and context.user is not None:
+                ownership = await sandbox.exec(
+                    f"chown -R {quote(str(context.user))} {quote(session_dir)}",
+                    timeout_s=30,
+                )
+                if ownership.return_code:
+                    raise RuntimeError("Unable to give the task user access to the Hermes session directory")
+        except BaseException:
+            from nemo_gym.sandbox.processes import stop_process_groups
+
+            try:
+                await stop_process_groups(sandbox, session_id=agent_session_id, user=context.user if context else None)
+            finally:
+                await sandbox.disconnect()
+            raise
         return HermesAgentSessionState(
             request=body,
             sandbox=sandbox,
             workdir=body.sandbox_access.workdir,
             session_dir=session_dir,
+            task_instruction=task_instruction,
         )
 
     async def _terminate_sandbox_runner(self, state: HermesAgentSessionState) -> None:
@@ -470,6 +519,14 @@ class HermesAgent(SimpleResponsesAPIAgent):
         state: HermesAgentSessionState,
     ) -> AgentObservationBundle:
         await self._terminate_sandbox_runner(state)
+        if state.request.agent_context is not None:
+            from nemo_gym.sandbox.processes import stop_process_groups
+
+            await stop_process_groups(
+                state.sandbox,
+                session_id=Path(state.session_dir).name,
+                user=state.request.agent_context.user,
+            )
         await state.sandbox.exec(
             f"rm -rf {quote(state.session_dir)}",
             cwd=state.workdir,
@@ -606,7 +663,7 @@ class HermesAgent(SimpleResponsesAPIAgent):
             "chat_template_kwargs_enabled": self.config.chat_template_kwargs_enabled,
             "config_yaml": self._build_config(),
             "disabled_toolsets": self.config.disabled_toolsets,
-            "enabled_toolsets": self.config.enabled_toolsets,
+            "enabled_toolsets": self.config.enabled_toolsets or ["terminal"],
             "history": history,
             "max_tokens": self.config.max_tokens,
             "max_turns": self.config.max_turns,
@@ -614,7 +671,7 @@ class HermesAgent(SimpleResponsesAPIAgent):
             "system_message": self.config.system_prompt or input_system,
             "temperature": self.config.temperature,
             "terminal_timeout": self.config.terminal_timeout,
-            "user_message": user_message,
+            "user_message": user_message + state.task_instruction,
         }
         await self._upload_json(state.sandbox, input_path, payload)
         try:
@@ -625,6 +682,7 @@ class HermesAgent(SimpleResponsesAPIAgent):
                     f">{quote(stdout_path)} 2>{quote(stderr_path)}"
                 ),
                 cwd=state.workdir,
+                user=state.request.agent_context.user if state.request.agent_context else None,
                 pty=False,
             )
         except NotImplementedError as error:
@@ -648,7 +706,15 @@ class HermesAgent(SimpleResponsesAPIAgent):
                 )
                 state_name = (status.stdout or "").strip()
                 if state_name == "running" and state.runner_exit_task is not None and state.runner_exit_task.done():
-                    state_name = "exited"
+                    # The runner may write output and exit between the file probe
+                    # and this check. Observe its final filesystem state before
+                    # declaring that a completed activation lost its result.
+                    final_status = await state.sandbox.exec(
+                        f"if [ -f {quote(output_path)} ]; then echo output; else echo exited; fi",
+                        cwd=state.workdir,
+                        timeout_s=30,
+                    )
+                    state_name = (final_status.stdout or "").strip()
                 if state_name == "request":
                     model_request = await self._download_json(state.sandbox, request_path)
                     for client_option in ("extra_headers", "extra_query", "timeout"):
@@ -720,7 +786,7 @@ class HermesAgent(SimpleResponsesAPIAgent):
                     )
                 if state_name == "exited":
                     logs = await state.sandbox.exec(
-                        f"cat {quote(stderr_path)} 2>/dev/null || true",
+                        f"cat {quote(stderr_path)} {quote(stdout_path)} 2>/dev/null || true",
                         cwd=state.workdir,
                         timeout_s=30,
                     )
@@ -942,12 +1008,28 @@ class HermesAgent(SimpleResponsesAPIAgent):
             state = self._require_agent_session(agent_session_id)
             if state.request.episode_id.capture_key != rollout_id:
                 raise ValueError("Agent-session episode_id does not match the rollout route")
-            episode = await self._run_sandbox_episode(
-                request=request,
-                body=body,
-                agent_session_id=agent_session_id,
-                state=state,
-            )
+            context = state.request.agent_context
+            try:
+                async with asyncio.timeout(context.timeout_sec if context else None):
+                    episode = await self._run_sandbox_episode(
+                        request=request,
+                        body=body,
+                        agent_session_id=agent_session_id,
+                        state=state,
+                    )
+            except TimeoutError:
+                return NeMoGymResponse(
+                    id=f"resp_{uuid4().hex}",
+                    created_at=int(time()),
+                    model=self._model_name(),
+                    object="response",
+                    output=[],
+                    status="incomplete",
+                    tool_choice=body.tool_choice,
+                    tools=body.tools,
+                    parallel_tool_calls=body.parallel_tool_calls,
+                    metadata={"termination_reason": "timeout", "agent_started": "true"},
+                )
             state.observations = episode.observations
             return episode.response
         if not isinstance(rollout_id, str):

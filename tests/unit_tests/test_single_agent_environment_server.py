@@ -165,6 +165,26 @@ async def test_single_agent_protocol_with_direct_resources_tools() -> None:
     assert client.calls[5][2]["json"].episode_id == EpisodeId(rollout_id="rollout", attempt=2)
 
 
+async def test_resource_context_reaches_any_agent_and_verifier_without_mutating_task() -> None:
+    server, client = _environment_server()
+    client.responses[0] = _Response(
+        {
+            "resources_session_id": "resources-session",
+            "agent_context": {"instruction": "Pinned task instructions", "timeout_sec": 123, "user": "task-user"},
+        }
+    )
+    request = _request()
+    await server.run_request(request)
+    context = client.calls[1][2]["json"].agent_context
+    assert context.timeout_sec == 123 and context.user == "task-user"
+    assert client.calls[2][2]["json"].input[0].content == "Pinned task instructions"
+    assert (
+        client.calls[4][2]["json"].verification_input.responses_create_params.input[0].content
+        == "Pinned task instructions"
+    )
+    assert request.task.task_input.responses_create_params.input == "task"
+
+
 async def test_single_agent_translates_resources_mcp_metadata_to_canonical_tool_access() -> None:
     environment_server, client = _environment_server(resources_tool_transports=["direct_http", "mcp"])
     client.responses[0] = _Response(

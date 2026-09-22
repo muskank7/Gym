@@ -126,11 +126,11 @@ class TestSanity:
         assert state.sandbox is sandbox
         assert state.workdir == "/app"
         assert state.session_dir.endswith("/session")
-        assert sandbox.exec.await_count == 2
-        assert sandbox.upload.await_count == 3
+        assert sandbox.exec.await_count == 3
+        assert sandbox.upload.await_count == 2
 
     async def test_sandbox_access_requires_terminal_only_mode(self) -> None:
-        hermes = HermesAgent(config=_config(), server_client=MagicMock(spec=ServerClient))
+        hermes = HermesAgent(config=_config(enabled_toolsets=["web"]), server_client=MagicMock(spec=ServerClient))
         body = AgentSeedSessionRequest(
             episode_id=EpisodeId(rollout_id="rollout"),
             task_id=TaskId(taskset="test", task_id="task"),
