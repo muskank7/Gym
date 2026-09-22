@@ -8,7 +8,6 @@ single_agent_legacy_environment_server:
       agent_server:
         type: responses_api_agents
         name: ???
-      task_input_contract: nemo_gym.single_agent.v1
       max_concurrent_episodes: null
       queue_timeout_seconds: null
       default_episode_timeout_seconds: 21600
