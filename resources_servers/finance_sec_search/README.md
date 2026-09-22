@@ -127,6 +127,26 @@ so track how many rollouts never submit, not just mean reward.
 With a local corpus or index available, also set `sec_dump_path` and
 `local_edgar_index_path` (see [Local EDGAR index](#local-edgar-index)).
 
+### Where SEC data comes from
+
+`sec_mode` selects the source for `edgar_search` and `sec_filing_search`.
+
+| `sec_mode` | `edgar_search` | `sec_filing_search` | Needs |
+|---|---|---|---|
+| `local` | Local SQLite index | Local index | `local_edgar_index_path` |
+| `live` | sec-api.io | SEC submissions API | `sec_api_key` |
+
+Left unset it follows `local_edgar_index_path`: `local` when one is configured,
+`live` otherwise. Asking for `local` without an index fails at startup.
+
+Local mode makes no network call, which is what training throughput needs: the
+ticker registry is built from the corpus rather than downloaded from SEC.gov,
+and filing text is read from `sec_dump_path`. It can only answer for issuers and
+dates the corpus holds — a search outside the indexed span returns an error
+naming that span rather than an empty result.
+
+Live mode is the one that matches the published benchmark.
+
 ### What is cached
 
 | Directory | Contents |

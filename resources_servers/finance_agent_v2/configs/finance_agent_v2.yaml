@@ -22,6 +22,13 @@ finance_agent_v2_resources_server:
       tavily_api_key: ${oc.select:tavily_api_key,${oc.env:TAVILY_API_KEY,null}}                # web_search (Tavily)
       sec_api_key: ${oc.select:sec_api_key,${oc.env:SEC_API_KEY,null}}                         # edgar_search (sec-api.io)
       pricing_data_api_key: ${oc.select:pricing_data_api_key,${oc.env:TIINGO_API_KEY,null}}    # price_history (Tiingo)
+      # live: edgar_search and SEC filing reads go to sec-api.io and sec.gov.
+      # local: they read the index and corpus below and make no network call.
+      # Unset follows local_edgar_index_path.
+      sec_mode: ${oc.select:sec_mode,null}
+      local_edgar_index_path: ${oc.select:local_edgar_index_path,null}
+      local_edgar_metadata_path: ${oc.select:local_edgar_metadata_path,null}
+      local_sec_corpus_path: ${oc.select:local_sec_corpus_path,null}
       retrieval_model_server:
         type: responses_api_models
         name: policy_model
