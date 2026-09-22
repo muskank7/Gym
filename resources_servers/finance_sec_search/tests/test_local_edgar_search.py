@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+import urllib.request
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -28,6 +29,7 @@ from resources_servers.finance_sec_search.app import (
     EdgarSearchRequest,
     FinanceAgentResourcesServer,
     FinanceAgentResourcesServerConfig,
+    FinanceAgentSearchRequest,
 )
 from resources_servers.finance_sec_search.scripts.convert_questions import (
     EDGAR_SEARCH_TOOL,
@@ -292,6 +294,53 @@ def test_live_mode_wins_over_a_configured_index(tmp_path: Path) -> None:
     )
 
     assert isinstance(server._edgar_search_service._backend, LiveEdgarSearch)
+
+
+def test_companies_are_derived_from_the_index(tmp_path: Path) -> None:
+    search = LocalEdgarSearch(_index(tmp_path / "index.sqlite"), max_end_date=UPSTREAM_MAX_END_DATE)
+
+    assert search.companies() == {
+        "AAPL": {"cik": "320193", "name": "Apple Inc."},
+        "MSFT": {"cik": "789019", "name": "Microsoft Corporation"},
+    }
+
+
+def test_company_filings_collapse_documents_into_filings(tmp_path: Path) -> None:
+    search = LocalEdgarSearch(_index(tmp_path / "index.sqlite"), max_end_date=UPSTREAM_MAX_END_DATE)
+
+    filings = search.company_filings("0000320193")
+
+    assert list(filings) == ["0000320193-24-000001"]
+    assert filings["0000320193-24-000001"]["form"] == "10-K"
+    assert filings["0000320193-24-000001"]["filing_date"] == "2024-11-01"
+
+
+@pytest.mark.asyncio
+async def test_sec_filing_search_is_served_without_the_network(tmp_path: Path, monkeypatch) -> None:
+    """Local mode has to answer this tool too, or a rollout stalls on SEC.gov
+    the moment the model looks a ticker up."""
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("local mode must not reach SEC.gov")
+
+    monkeypatch.setattr(urllib.request, "urlopen", forbidden)
+    server = FinanceAgentResourcesServer(
+        config=_server_config(
+            tmp_path,
+            sec_mode="local",
+            local_edgar_index_path=str(_index(tmp_path / "index.sqlite")),
+        ),
+        server_client=MagicMock(spec=ServerClient),
+    )
+    monkeypatch.setattr(server, "_fetch_with_retry", forbidden)
+    server._load_tickers_or_fail()
+
+    response = await server.sec_filing_search(_request(), FinanceAgentSearchRequest(ticker="AAPL"))
+    results = json.loads(response.results)
+
+    assert results[0]["company_name"] == "Apple Inc."
+    assert results[0]["form"] == "10-K"
+    assert results[0]["accession_number"] == "0000320193-24-000001"
 
 
 def test_a_v1_sidecar_is_still_accepted(tmp_path: Path) -> None:

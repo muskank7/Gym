@@ -300,6 +300,7 @@ class LocalEdgarSearch:
         self._require_usable_metadata_source()
         self.max_end_date = _date_value("max_end_date", max_end_date)
         self._coverage: tuple[str, str] | None | object = _COVERAGE_UNSET
+        self._companies: dict[str, dict[str, str]] | None = None
         self.metrics_path: Path | None = None
         self._metrics_lock = threading.Lock()
         self._local = threading.local()
@@ -515,6 +516,60 @@ class LocalEdgarSearch:
             filter_browse_fallback=filter_browse_fallback,
         )
         return results
+
+    def companies(self) -> dict[str, dict[str, str]]:
+        """Ticker to CIK and company name, for every issuer in the index.
+
+        Stands in for SEC's company_tickers.json when there is no network. Only
+        covers issuers the corpus holds, which is the set a local search could
+        return anyway.
+        """
+        if self._companies is None:
+            table = SIDECAR_TABLE if self.metadata_path is not None else "documents"
+            rows = self._session().execute(
+                f"SELECT ticker, cik, company_name, MAX(filing_date) FROM {table} "
+                f"WHERE ticker IS NOT NULL AND ticker != '' GROUP BY ticker, cik"
+            )
+            # Most recent filing wins when a ticker has been reassigned.
+            latest: dict[str, tuple[str, str, str]] = {}
+            for ticker, cik, name, filed in rows:
+                key = str(ticker).upper()
+                if key not in latest or str(filed) > latest[key][2]:
+                    latest[key] = (str(cik), str(name), str(filed))
+            self._companies = {ticker: {"cik": cik, "name": name} for ticker, (cik, name, _filed) in latest.items()}
+        return self._companies
+
+    def company_filings(self, cik: str) -> dict[str, dict[str, Any]]:
+        """Filings for one CIK, keyed by accession number.
+
+        The index stores a row per document, so exhibits collapse back into the
+        filing they belong to and the primary document supplies its URL.
+        """
+        table = SIDECAR_TABLE if self.metadata_path is not None else "documents"
+        has_report_date = "report_date" in self.metadata_columns
+        report_date = "report_date" if has_report_date else "'' AS report_date"
+        rows = self._session().execute(
+            f"SELECT id, accession_number, form_type, document_type, filing_date, {report_date}, url "
+            f"FROM {table} WHERE cik = ? ORDER BY id",
+            (str(int(cik)),),
+        )
+
+        filings: dict[str, dict[str, Any]] = {}
+        primary: dict[str, bool] = {}
+        for _id, accession, form_type, document_type, filing_date, filed_for, url in rows:
+            accession = str(accession)
+            is_primary = document_type == form_type
+            if accession in filings and (primary.get(accession) or not is_primary):
+                continue
+            filings[accession] = {
+                "form": str(form_type),
+                "filing_date": str(filing_date or ""),
+                "report_date": str(filed_for or ""),
+                "accession_number": accession,
+                "filing_url": str(url),
+            }
+            primary[accession] = is_primary
+        return filings
 
     def _require_coverage(self, request: LocalEdgarRequest) -> None:
         coverage = self.coverage

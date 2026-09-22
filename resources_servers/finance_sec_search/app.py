@@ -689,6 +689,10 @@ class FinanceAgentResourcesServer(SimpleResourcesServer):
         SEC_TICKERS_URL = "https://www.sec.gov/files/company_tickers.json"
         MAX_RETRIES = 5
 
+        if self._local_edgar_search is not None:
+            self._load_tickers_from_index()
+            return
+
         raw = None
 
         if self.config.use_cache and self._tickers_file.exists():
@@ -733,6 +737,30 @@ class FinanceAgentResourcesServer(SimpleResourcesServer):
             self._tickers[item["ticker"].upper()] = {"cik": str(item["cik_str"]).zfill(10), "name": item["title"]}
         self._initialized = True
         logger.info("Loaded %d ticker mappings", len(self._tickers))
+
+    def _load_tickers_from_index(self) -> None:
+        """Build the ticker registry from the local corpus, without SEC.gov.
+
+        Downloading the registry would give tickers the index cannot answer for,
+        so a lookup would succeed and the filing search behind it return nothing.
+        """
+        companies = self._local_edgar_search.companies()
+        if not companies:
+            raise RuntimeError(
+                f"Local EDGAR index {self.config.local_edgar_index_path} yielded no tickers, so "
+                "sec_filing_search could never resolve a company."
+            )
+        raw = {
+            str(position): {"ticker": ticker, "cik_str": int(info["cik"]), "title": info["name"]}
+            for position, (ticker, info) in enumerate(sorted(companies.items()))
+        }
+        for item in self._overlay_supplementary_tickers(raw).values():
+            self._tickers[item["ticker"].upper()] = {
+                "cik": str(item["cik_str"]).zfill(10),
+                "name": item["title"],
+            }
+        self._initialized = True
+        logger.info("Loaded %d ticker mappings from the local EDGAR index", len(self._tickers))
 
     def _overlay_supplementary_tickers(self, raw: Dict[str, Any]) -> Dict[str, Any]:
         """Merge the overlay onto an SEC registry. Overlay wins; one row per ticker.
@@ -821,6 +849,11 @@ class FinanceAgentResourcesServer(SimpleResourcesServer):
 
         if cik_padded in self._filings_cache:
             return self._filings_cache[cik_padded]
+
+        if self._local_edgar_search is not None:
+            filings = await asyncio.to_thread(self._local_edgar_search.company_filings, cik)
+            self._filings_cache[cik_padded] = filings
+            return filings
 
         lock = self._filings_locks.setdefault(cik_padded, asyncio.Lock())
         async with lock:
