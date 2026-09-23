@@ -24,7 +24,7 @@ example_single_tool_call_native_simple_agent:
 
 example_single_tool_call_native_environment_server:
   environment_servers:
-    single_agent:
+    single_agent_turn:
       entrypoint: app.py
       resources_server:
         type: resources_servers
